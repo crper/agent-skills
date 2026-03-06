@@ -1,0 +1,65 @@
+name: Repo Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate JSON and local Markdown links
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+
+          root = Path('.')
+
+          for json_file in root.glob('skills/*/evals/*.json'):
+              with json_file.open('r', encoding='utf-8') as fp:
+                  json.load(fp)
+
+          link_re = re.compile(r'\[[^\]]+\]\(([^)]+)\)')
+          img_re = re.compile(r'<img\s+[^>]*src="([^"]+)"')
+          md_files = [p for p in root.rglob('*.md') if '.git' not in p.parts]
+
+          broken = []
+          for md in md_files:
+              text = md.read_text(encoding='utf-8')
+              for raw in link_re.findall(text) + img_re.findall(text):
+                  if raw.startswith(('http://', 'https://', '#', 'mailto:')):
+                      continue
+                  target = raw.split('#', 1)[0]
+                  if not target:
+                      continue
+                  resolved = (md.parent / target).resolve()
+                  if not resolved.exists():
+                      broken.append((md.as_posix(), raw))
+
+          if broken:
+              for md, raw in broken:
+                  print(f'BROKEN {md} -> {raw}')
+              raise SystemExit(1)
+
+          print('JSON and Markdown link checks passed.')
+          PY
+
+      - name: Compile Python scripts
+        run: python -m compileall skills
+
+      - name: Check documented CLI entrypoint
+        run: python skills/github-fetch-release-notes/scripts/fetch_updates.py --help > /dev/null

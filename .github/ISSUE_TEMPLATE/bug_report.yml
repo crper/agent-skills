@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a problem in a skill, doc, script, or demo preview.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: input
+    id: skill
+    attributes:
+      label: Affected skill / 相关技能
+      description: Which skill or file is affected?
+      placeholder: github-fetch-release-notes
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area / 问题位置
+      options:
+        - Skill behavior / 技能行为
+        - README or docs / 文档
+        - Script or automation / 脚本或自动化
+        - Demo preview / 效果图
+        - Other / 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened? / 问题描述
+      description: What did you expect, and what actually happened?
+      placeholder: |
+        Expected: ...
+        Actual: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction / 复现方式
+      description: Steps, prompt, command, or input that can reproduce the problem.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment / 环境信息
+      description: OS, Python, gh version, agent runtime, or any other useful context.
+      placeholder: macOS 15 / Python 3.11 / gh 2.x
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist / 检查项
+      options:
+        - label: I checked the latest README and skill docs first. / 我已先阅读最新 README 和技能文档
+          required: true
+        - label: I removed secrets, tokens, and private data from this report. / 我已移除密钥、令牌和隐私数据
+          required: true

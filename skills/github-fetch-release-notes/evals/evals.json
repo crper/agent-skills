@@ -1,0 +1,101 @@
+{
+  "skill_name": "github-fetch-release-notes",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我看看 openclaw/openclaw 最近两个版本更新了什么，直接给结构化结果。",
+      "expected_output": "Returns stable JSON for a repository that should resolve through CHANGELOG.",
+      "files": [],
+      "expectations": [
+        "Top-level output contains schema_version, generated_at, query, stats, and results.",
+        "results[0].repo is normalized to openclaw/openclaw.",
+        "results[0].status equals ok.",
+        "results[0].source equals changelog when the repository changelog is available.",
+        "For changelog-sourced results, published_at is only set when a matching GitHub Release confirms the version.",
+        "If the latest changelog version is ahead of recent releases, notes explain that it is not yet confirmed instead of treating it as a formal publish time."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "查一下 anomalyco/opencode 最近更新，保留详细条目；如果没有 changelog，就自动回退到 releases。",
+      "expected_output": "Returns stable JSON for a repository that may resolve through Releases and includes details when requested.",
+      "files": [],
+      "expectations": [
+        "Top-level output keeps the stable schema.",
+        "results[0].repo is normalized to anomalyco/opencode.",
+        "results[0].latest_details exists when details are requested.",
+        "results[0].previous_details exists when details are requested.",
+        "The result remains valid whether source is changelog or releases."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "这个地址能不能直接识别？https://github.com/owner/repo",
+      "expected_output": "Normalizes GitHub URL input and still returns the same stable schema.",
+      "files": [],
+      "expectations": [
+        "The input is normalized into owner/repo format in the result.",
+        "The output still contains the same top-level schema fields.",
+        "The result shape stays stable even if the repository does not exist."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "bad repo 这个仓库名是不是不合法？",
+      "expected_output": "Returns an invalid_repo error for malformed repository input.",
+      "files": [],
+      "expectations": [
+        "results[0].status equals error.",
+        "results[0].source equals error.",
+        "results[0].repo is null.",
+        "results[0].error_code equals invalid_repo."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "我一次想查 11 个仓库，这个技能会怎么处理？",
+      "expected_output": "Rejects oversized batches before execution.",
+      "files": [],
+      "expectations": [
+        "The command rejects requests larger than 10 repositories.",
+        "The failure happens before repository fetching starts.",
+        "The caller is instructed to split the request."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "请用 --details 的结果格式返回 farion1231/cc-switch 最近两个版本更新。",
+      "expected_output": "Returns stable JSON with detailed changelog entries for a repository with long-form changelog notes.",
+      "files": [],
+      "expectations": [
+        "results[0].status equals ok.",
+        "results[0].source usually resolves to changelog.",
+        "results[0].latest_details contains actionable changelog entries.",
+        "Generic stats-only lines should not dominate the top-level highlights."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "帮我看看 openai/codex 最近的预发布版本更新，直接返回结构化结果。",
+      "expected_output": "Returns stable JSON even when the latest release note is very short or mostly just a release title.",
+      "files": [],
+      "expectations": [
+        "The output keeps the stable schema for prerelease tags.",
+        "The result may use releases as the source.",
+        "If the release body is too short, notes should explain that the release notes are minimal instead of inventing highlights."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "如果某个仓库的 CHANGELOG 最新版本比 GitHub Release 更靠前，别把它直接当正式发布时间，给我结构化结果。",
+      "expected_output": "Returns stable JSON that keeps changelog content but only treats published_at as official when a matching release confirms it.",
+      "files": [],
+      "expectations": [
+        "The output keeps the same stable schema.",
+        "The skill may still use changelog as the content source.",
+        "published_at remains null when the changelog version is not confirmed by recent GitHub Releases.",
+        "notes explain that the changelog entry may be prewritten or pending release."
+      ]
+    }
+  ]
+}

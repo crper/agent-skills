@@ -1,0 +1,18 @@
+[
+  {
+    "name": "single-purpose-chinese",
+    "prompt": "用 $chrome-web-store-submission 帮我写 Chrome 扩展发布信息，只输出中文，包含单一用途、storage/contextMenus/sidePanel 权限理由、远程代码和数据使用。"
+  },
+  {
+    "name": "permission-rationale-english",
+    "prompt": "Use $chrome-web-store-submission to generate English-only Chrome Web Store permission justifications and remote code answers for this extension."
+  },
+  {
+    "name": "bilingual-listing-copy",
+    "prompt": "用 $chrome-web-store-submission 给我一版中英双语的 Chrome Web Store 短描述、详细介绍和 reviewer note。"
+  },
+  {
+    "name": "requested-permissions-only",
+    "prompt": "用 $chrome-web-store-submission 检查当前扩展，只给 manifest 里实际申请到的权限写理由；如果没请求 sidePanel，就不要补一个 sidePanel 字段。"
+  }
+]
