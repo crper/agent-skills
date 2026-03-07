@@ -82,6 +82,7 @@
       "expectations": [
         "The output keeps the stable schema for prerelease tags.",
         "The result may use releases as the source.",
+        "The latest release should be determined from published release timestamps rather than trusting the raw API list order.",
         "If the release body is too short, notes should explain that the release notes are minimal instead of inventing highlights."
       ]
     },
@@ -95,6 +96,19 @@
         "The skill may still use changelog as the content source.",
         "published_at remains null when the changelog version is not confirmed by recent GitHub Releases.",
         "notes explain that the changelog entry may be prewritten or pending release."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "帮我看 RightNow-AI/openfang 最近更新，别让旧 changelog 盖住更新的 GitHub Releases。",
+      "expected_output": "Returns stable JSON and falls back to Releases when the changelog latest formal version is clearly stale.",
+      "files": [],
+      "expectations": [
+        "The output keeps the same stable schema.",
+        "results[0].repo is normalized to RightNow-AI/openfang.",
+        "results[0].source equals releases when the changelog latest formal version is behind a newer published GitHub Release.",
+        "notes explain that the stale changelog was bypassed in favor of Releases.",
+        "New prerelease-only activity should not force fallback when a comparable stable release still matches the changelog latest formal version."
       ]
     }
   ]

@@ -46,6 +46,8 @@ Field notes:
 
 - `published_at`: official publish time confirmed by a matching GitHub Release; otherwise `null`
 - `notes`: may include hints such as `发现 Unreleased 分段`, `已用 GitHub Release 确认该版本发布时间`, or `CHANGELOG 最新版本尚未在最近的 GitHub Releases 中确认，可能是预写或待发布`
+- even when a changelog file exists, `source` may still be `releases` if the changelog's latest formal version is clearly behind a newer published GitHub Release; stale comparison prefers comparable stable releases before prereleases
+- `unreleased_present` may remain `true` on a releases-sourced result when the repository changelog still contains an `Unreleased` section
 
 When `--details` is enabled, each item also includes:
 

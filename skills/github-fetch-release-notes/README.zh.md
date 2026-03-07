@@ -72,6 +72,8 @@ python3 ./skills/github-fetch-release-notes/scripts/fetch_updates.py owner/repo 
 
 - `published_at` 仅在找到可匹配的 GitHub Release 时填充
 - 如果结果来自 `CHANGELOG`，但最近的 `Releases` 里还没确认该版本，则 `published_at` 会保持为 `null`，并在 `notes` 里提示这可能是预写或待发布条目
+- 如果 `CHANGELOG` 可读，但其最新正式版本明显落后于更新的已发布 Release，技能会自动回退到 `Releases`，避免把陈旧 changelog 当成最新结果；stale 判断会优先参考可比较的稳定版，再回退到预发布版本
+- `Unreleased` 只作为补充信号，不会单独阻止回退到更新的已发布 Release
 
 ## 常见认证相关错误码
 

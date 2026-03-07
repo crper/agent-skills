@@ -26,6 +26,7 @@ compatibility: Python 3.8+；需要安装 GitHub CLI（gh）并先执行一次 g
 
 - 优先读取 `CHANGELOG`
 - 从 `CHANGELOG` 取到内容后，会用最近的 `Releases` 轻量确认发布时间
+- 如果 `CHANGELOG` 可读，但其最新正式版本明显落后于更新的已发布 Release（优先参考可比较的稳定版），会自动回退到 `Releases`
 - 如果 `CHANGELOG` 不可用，就回退到 `Releases`
 - 自动处理 `owner/repo`、GitHub URL、SSH 仓库地址
 - 默认输出固定 schema 的 JSON
@@ -75,6 +76,7 @@ python3 ./skills/github-fetch-release-notes/scripts/fetch_updates.py owner/repo 
 
 - `published_at` 仅表示**已被 GitHub Release 确认的发布时间**
 - 如果只在 `CHANGELOG` 中看到版本，但最近的 `Releases` 里还未确认，会保留 `published_at = null`，并在 `notes` 说明
+- `Unreleased` 只作为补充信号，不会阻止对“陈旧 changelog”的回退判断
 
 如果带 `--details`，还会额外返回：
 

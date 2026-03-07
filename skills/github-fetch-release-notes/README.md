@@ -72,6 +72,8 @@ Field semantics:
 
 - `published_at` is only populated when a matching GitHub Release confirms the version
 - If the result comes from `CHANGELOG` but the latest version is not confirmed by recent `Releases`, `published_at` stays `null` and `notes` explains that the changelog entry may be prewritten or pending release
+- If a readable `CHANGELOG` is clearly behind a newer published GitHub Release, the skill falls back to `Releases` instead of reporting the stale changelog version as latest; this stale check prefers comparable stable releases before prereleases
+- `Unreleased` is treated as a supplemental signal and does not, by itself, block fallback to fresher published Releases
 
 ## Common auth-related error codes
 

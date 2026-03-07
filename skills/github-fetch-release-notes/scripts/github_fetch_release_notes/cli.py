@@ -1,6 +1,7 @@
 import argparse
 import json
-from typing import Any, Dict, List, Optional
+import re
+from typing import Any, Dict, List, Optional, Tuple
 
 from .changelog import collect_items, extract_version_label, parse_changelog, summarize_lines
 from .gh_client import (
@@ -26,6 +27,7 @@ from .output import (
 DEFAULT_DETAIL_LIMIT = 8
 MAX_REPOS = 10
 CHANGELOG_RELEASE_CONFIRMATION_LIMIT = 5
+PRERELEASE_TOKEN_SPLIT_RE = re.compile(r"[._-]+")
 
 
 def normalize_version_for_match(value: Optional[str]) -> Optional[str]:
@@ -36,6 +38,102 @@ def normalize_version_for_match(value: Optional[str]) -> Optional[str]:
     if normalized.startswith("v") and len(normalized) > 1 and normalized[1].isdigit():
         normalized = normalized[1:]
     return normalized or None
+
+
+def parse_comparable_version(value: Optional[str]) -> Optional[Tuple[Tuple[int, ...], Tuple[Tuple[int, Any], ...]]]:
+    normalized = normalize_version_for_match(value)
+    if not normalized:
+        return None
+
+    version_text = normalized.split("+", 1)[0]
+    core_text, separator, prerelease_text = version_text.partition("-")
+    core_parts = core_text.split(".")
+    if len(core_parts) < 2 or any(not part.isdigit() for part in core_parts):
+        return None
+
+    core = tuple(int(part) for part in core_parts)
+    prerelease: List[Tuple[int, Any]] = []
+    if separator:
+        for part in PRERELEASE_TOKEN_SPLIT_RE.split(prerelease_text):
+            if not part:
+                continue
+            if part.isdigit():
+                prerelease.append((0, int(part)))
+            else:
+                prerelease.append((1, part.lower()))
+
+    return core, tuple(prerelease)
+
+
+def compare_versions(left: Optional[str], right: Optional[str]) -> Optional[int]:
+    left_parsed = parse_comparable_version(left)
+    right_parsed = parse_comparable_version(right)
+    if not left_parsed or not right_parsed:
+        return None
+
+    left_core, left_prerelease = left_parsed
+    right_core, right_prerelease = right_parsed
+    max_core_len = max(len(left_core), len(right_core))
+    padded_left = left_core + (0,) * (max_core_len - len(left_core))
+    padded_right = right_core + (0,) * (max_core_len - len(right_core))
+
+    if padded_left < padded_right:
+        return -1
+    if padded_left > padded_right:
+        return 1
+
+    if not left_prerelease and not right_prerelease:
+        return 0
+    if left_prerelease and not right_prerelease:
+        return -1
+    if not left_prerelease and right_prerelease:
+        return 1
+
+    for left_token, right_token in zip(left_prerelease, right_prerelease):
+        if left_token == right_token:
+            continue
+        if left_token[0] != right_token[0]:
+            return -1 if left_token[0] < right_token[0] else 1
+        if left_token[1] < right_token[1]:
+            return -1
+        if left_token[1] > right_token[1]:
+            return 1
+
+    if len(left_prerelease) < len(right_prerelease):
+        return -1
+    if len(left_prerelease) > len(right_prerelease):
+        return 1
+    return 0
+
+
+def latest_release_version(release: Optional[Dict[str, Any]]) -> Optional[str]:
+    if not release:
+        return None
+    return release.get("tag_name") or release.get("name")
+
+
+def is_prerelease(release: Optional[Dict[str, Any]]) -> bool:
+    return bool(release and release.get("prerelease"))
+
+
+def pick_release_for_staleness(releases: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    comparable_stable = [
+        release
+        for release in releases
+        if not is_prerelease(release) and parse_comparable_version(latest_release_version(release)) is not None
+    ]
+    if comparable_stable:
+        return comparable_stable[0]
+
+    comparable_any = [
+        release
+        for release in releases
+        if parse_comparable_version(latest_release_version(release)) is not None
+    ]
+    if comparable_any:
+        return comparable_any[0]
+
+    return None
 
 
 def find_release_confirmation(releases: List[Dict[str, Any]], version: Optional[str]) -> Optional[Dict[str, Any]]:
@@ -50,13 +148,13 @@ def find_release_confirmation(releases: List[Dict[str, Any]], version: Optional[
     return None
 
 
-def resolve_from_changelog(
-    input_repo: str,
+def build_changelog_candidate(
     repo: str,
     default_branch: str,
-    release_limit: int,
-    timeout: int,
     detail_limit: int,
+    timeout: int,
+    releases: List[Dict[str, Any]],
+    input_repo: str,
 ) -> Optional[Dict[str, Any]]:
     for path in DEFAULT_CHANGELOG_PATHS:
         text = fetch_contents(repo, path, timeout)
@@ -76,6 +174,7 @@ def resolve_from_changelog(
 
         latest_details = collect_items(latest_lines, detail_limit)
         previous_details = collect_items(previous_lines, detail_limit)
+        unreleased_has_content = bool(collect_items(unreleased_lines, 1))
         highlights = summarize_lines(latest_lines or unreleased_lines, 3)
 
         if not latest_version and not latest_details and not highlights:
@@ -83,13 +182,11 @@ def resolve_from_changelog(
 
         notes: List[str] = []
         published_at = None
-        if collect_items(unreleased_lines, 1):
+        if unreleased_has_content:
             notes.append("发现 Unreleased 分段")
         if not latest_version:
             notes.append("已读取 changelog，但未稳定识别出最新版本标题")
         else:
-            confirmation_limit = max(release_limit, CHANGELOG_RELEASE_CONFIRMATION_LIMIT)
-            releases = get_latest_releases(repo, confirmation_limit, timeout)
             matched_release = find_release_confirmation(releases, latest_version)
             if matched_release:
                 published_at = matched_release.get("published_at")
@@ -99,32 +196,49 @@ def resolve_from_changelog(
             else:
                 notes.append("仓库没有可用于确认发布时间的 GitHub Releases")
 
-        return make_result(
-            input_repo=input_repo,
-            repo=repo,
-            source="changelog",
-            latest_version=latest_version,
-            previous_version=previous_version,
-            unreleased_present=bool(unreleased_lines),
-            published_at=published_at,
-            highlights=highlights,
-            raw_url=github_blob_url(repo, default_branch, path),
-            notes=notes,
-            latest_details=latest_details,
-            previous_details=previous_details,
-        )
+        return {
+            "input_repo": input_repo,
+            "repo": repo,
+            "latest_version": latest_version,
+            "previous_version": previous_version,
+            "unreleased_present": bool(unreleased_lines),
+            "unreleased_has_content": unreleased_has_content,
+            "published_at": published_at,
+            "highlights": highlights,
+            "raw_url": github_blob_url(repo, default_branch, path),
+            "notes": notes,
+            "latest_details": latest_details,
+            "previous_details": previous_details,
+        }
 
     return None
 
 
-def resolve_from_releases(
+def build_changelog_result(candidate: Dict[str, Any]) -> Dict[str, Any]:
+    return make_result(
+        input_repo=candidate["input_repo"],
+        repo=candidate["repo"],
+        source="changelog",
+        latest_version=candidate.get("latest_version"),
+        previous_version=candidate.get("previous_version"),
+        unreleased_present=bool(candidate.get("unreleased_present")),
+        published_at=candidate.get("published_at"),
+        highlights=candidate.get("highlights"),
+        raw_url=candidate.get("raw_url"),
+        notes=candidate.get("notes"),
+        latest_details=candidate.get("latest_details"),
+        previous_details=candidate.get("previous_details"),
+    )
+
+
+def build_release_result(
     input_repo: str,
     repo: str,
-    release_limit: int,
-    timeout: int,
+    releases: List[Dict[str, Any]],
     detail_limit: int,
+    unreleased_present: bool = False,
+    prepend_notes: Optional[List[str]] = None,
 ) -> Optional[Dict[str, Any]]:
-    releases = get_latest_releases(repo, release_limit, timeout)
     if not releases:
         return None
 
@@ -134,7 +248,7 @@ def resolve_from_releases(
     previous_body = previous.get("body") or ""
     latest_details = collect_items(latest_body.splitlines(), detail_limit)
     previous_details = collect_items(previous_body.splitlines(), detail_limit)
-    notes = []
+    notes = list(prepend_notes or [])
     if not latest_body.strip():
         notes.append("最新 Release 没有正文内容")
     elif not latest_details:
@@ -144,9 +258,9 @@ def resolve_from_releases(
         input_repo=input_repo,
         repo=repo,
         source="releases",
-        latest_version=latest.get("tag_name") or latest.get("name"),
-        previous_version=previous.get("tag_name") or previous.get("name"),
-        unreleased_present=False,
+        latest_version=latest_release_version(latest),
+        previous_version=latest_release_version(previous),
+        unreleased_present=unreleased_present,
         published_at=latest.get("published_at"),
         highlights=summarize_lines(latest_body.splitlines(), 3),
         raw_url=latest.get("html_url") or github_repo_url(repo),
@@ -154,6 +268,36 @@ def resolve_from_releases(
         latest_details=latest_details,
         previous_details=previous_details,
     )
+
+
+def should_prefer_releases(changelog_candidate: Dict[str, Any], releases: List[Dict[str, Any]]) -> bool:
+    if not changelog_candidate or not releases:
+        return False
+
+    latest_version = changelog_candidate.get("latest_version")
+    if not latest_version:
+        return True
+
+    release_for_staleness = pick_release_for_staleness(releases)
+    if not release_for_staleness:
+        return False
+
+    comparison = compare_versions(latest_version, latest_release_version(release_for_staleness))
+    return comparison is not None and comparison < 0
+
+
+def build_release_notes_from_changelog_context(changelog_candidate: Dict[str, Any]) -> List[str]:
+    notes: List[str] = []
+    latest_version = changelog_candidate.get("latest_version")
+    if latest_version:
+        notes.append("CHANGELOG 最新正式版本落后于 GitHub Releases，已回退到 Releases")
+    else:
+        notes.append("已读取 changelog，但未稳定识别出最新版本标题，已回退到 Releases")
+
+    if changelog_candidate.get("unreleased_has_content"):
+        notes.append("发现 Unreleased 分段")
+        notes.append("CHANGELOG 中存在 Unreleased 内容，未并入本次正式版本摘要")
+    return notes
 
 
 def repo_update(raw_repo: str, release_limit: int, timeout: int, detail_limit: int) -> Dict[str, Any]:
@@ -193,10 +337,24 @@ def repo_update(raw_repo: str, release_limit: int, timeout: int, detail_limit: i
     default_branch = metadata.get("default_branch") or "HEAD"
 
     try:
-        changelog_result = resolve_from_changelog(raw_repo, repo, default_branch, release_limit, timeout, detail_limit)
-        if changelog_result:
-            return changelog_result
-        release_result = resolve_from_releases(raw_repo, repo, release_limit, timeout, detail_limit)
+        release_fetch_limit = max(release_limit, CHANGELOG_RELEASE_CONFIRMATION_LIMIT)
+        releases = get_latest_releases(repo, release_fetch_limit, timeout)
+        changelog_candidate = build_changelog_candidate(repo, default_branch, detail_limit, timeout, releases, raw_repo)
+        if changelog_candidate:
+            if should_prefer_releases(changelog_candidate, releases):
+                release_result = build_release_result(
+                    raw_repo,
+                    repo,
+                    releases[:release_limit],
+                    detail_limit,
+                    unreleased_present=bool(changelog_candidate.get("unreleased_present")),
+                    prepend_notes=build_release_notes_from_changelog_context(changelog_candidate),
+                )
+                if release_result:
+                    return release_result
+            return build_changelog_result(changelog_candidate)
+
+        release_result = build_release_result(raw_repo, repo, releases[:release_limit], detail_limit)
         if release_result:
             return release_result
     except GitHubApiError as exc:
@@ -264,3 +422,7 @@ def main() -> int:
     else:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

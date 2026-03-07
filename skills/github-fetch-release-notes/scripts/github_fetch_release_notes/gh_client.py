@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime
 import json
 import re
 import shutil
@@ -280,4 +281,19 @@ def get_latest_releases(repo: str, limit: int, timeout: int) -> List[Dict[str, A
     data = api_get_json(endpoint, timeout)
     if not isinstance(data, list):
         return []
-    return [item for item in data if isinstance(item, dict)]
+
+    releases = [item for item in data if isinstance(item, dict) and not item.get("draft")]
+
+    def sort_key(item: Dict[str, Any]) -> Tuple[int, str]:
+        for field in ("published_at", "created_at"):
+            value = item.get(field)
+            if isinstance(value, str) and value:
+                try:
+                    dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                    return (1, dt.isoformat())
+                except ValueError:
+                    continue
+        return (0, "")
+
+    releases.sort(key=sort_key, reverse=True)
+    return releases
