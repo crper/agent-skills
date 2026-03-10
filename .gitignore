@@ -23,6 +23,14 @@ build/
 # Logs
 *.log
 
+# Tool caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.tox/
+.nox/
+.eslintcache
+
 # Nested virtual environments created during local skill testing
 **/.venv/
 **/venv/
