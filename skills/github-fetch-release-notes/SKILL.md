@@ -31,7 +31,7 @@ compatibility: Python 3.8+；需要安装 GitHub CLI（gh）并先执行一次 g
 - 自动处理 `owner/repo`、GitHub URL、SSH 仓库地址
 - 默认输出固定 schema 的 JSON
 - 复用用户本机 `gh auth login` 的登录态
-- 用 `error_code` 明确标记错误类型，方便脚本分支处理
+- 用 `error.code` 明确标记错误类型，方便脚本分支处理
 
 ## 运行前提
 
@@ -57,35 +57,30 @@ python3 ./skills/github-fetch-release-notes/scripts/fetch_updates.py owner/repo 
 - `stats`
 - `results`
 
-每个 `results[]` 固定包含：
+每个 `results[]` 现在采用更适合脚本和大模型消费的嵌套结构，固定包含：
 
-- `input_repo`
-- `repo`
+- `input`
 - `status`
-- `source`
-- `error_code`
-- `latest_version`
-- `previous_version`
-- `unreleased_present`
-- `published_at`
-- `highlights`
-- `raw_url`
+- `selection`
+- `versions`
+- `signals`
+- `warnings`
 - `notes`
+- `error`
 
 其中：
 
-- `published_at` 仅表示**已被 GitHub Release 确认的发布时间**
-- 如果只在 `CHANGELOG` 中看到版本，但最近的 `Releases` 里还未确认，会保留 `published_at = null`，并在 `notes` 说明
-- `Unreleased` 只作为补充信号，不会阻止对“陈旧 changelog”的回退判断
+- `selection.decision_code` 是稳定的机器可读决策原因
+- `versions.latest` / `versions.previous` 统一承载版本、发布时间、亮点和详情
+- `signals` 放补充判断信号，例如 `unreleased_present`、`changelog_stale`、`stable_release_preferred`
+- `warnings[].code` 提供稳定的结构化告警标签
+- `error` 仅在 `status = error` 时出现
 
-如果带 `--details`，还会额外返回：
-
-- `latest_details`
-- `previous_details`
+如果带 `--details`，会把详细条目放进 `versions.latest.details` 和 `versions.previous.details`。
 
 如果需要按字段严格消费结果，请查看 `references/output-schema.md`。
 
-## 常见 `error_code`
+## 常见 `error.code`
 
 - `invalid_repo`
 - `gh_not_installed`
@@ -106,4 +101,5 @@ python3 ./skills/github-fetch-release-notes/scripts/fetch_updates.py owner/repo 
 - 用户要更多上下文时，再加 `--details`
 - 不要把 `CHANGELOG` 标题里的日期或版本号直接当成正式发布时间；正式发布时间以 GitHub Release 确认为准
 - 如果最新 release note 过于简短，就明确返回空亮点或提示说明，不要为了“看起来完整”而脑补内容
-- 技能内部保留轻量串行和一次重试，但不把复杂参数暴露给用户
+- 如果最近 Releases 同时混有预发布和正式版，默认优先正式版；只有最近没有正式版时，才返回预发布
+- 技能内部使用轻量有界并发、错误退避和一次重试；release 查询会优先走 `gh api graphql` 批量预取，失败时再回退到 REST，但不把复杂参数暴露给用户

@@ -9,12 +9,17 @@ Fetch GitHub Release / CHANGELOG updates through the local `gh auth login` sessi
 - Designed for **small-batch queries**
 - Recommended limit: **up to 10 repositories per run**
 - Split larger workloads into multiple runs
+- Uses light bounded concurrency with error-driven backoff by default; release lookups prefer batched `gh api graphql` prefetch and fall back to REST when needed, which fits cron / bot style small-batch polling better
 
 ## Project Structure
 
 - `scripts/fetch_updates.py` — entry point
-- `scripts/github_fetch_release_notes/cli.py` — main flow and argument parsing
-- `scripts/github_fetch_release_notes/gh_client.py` — environment checks and `gh api` calls
+- `scripts/regression_check.py` — regression script for critical error paths and behavior checks
+- `scripts/github_fetch_release_notes/cli.py` — CLI entry and argument parsing
+- `scripts/github_fetch_release_notes/models.py` — config objects and result models
+- `scripts/github_fetch_release_notes/service.py` — orchestration and multi-repo scheduling
+- `scripts/github_fetch_release_notes/release_policy.py` — version comparison, prerelease filtering, and fallback policy
+- `scripts/github_fetch_release_notes/gh_client.py` — environment checks, `gh api` execution, and concurrency backoff
 - `scripts/github_fetch_release_notes/changelog.py` — CHANGELOG parsing
 - `scripts/github_fetch_release_notes/output.py` — stable output schema and error semantics
 - `evals/evals.json` — minimal evaluation prompts for future regression checks
@@ -48,34 +53,32 @@ Top-level fields:
 - `stats`
 - `results`
 
-Each `results[]` item includes:
+Each `results[]` item now uses a nested structure:
 
-- `input_repo`
-- `repo`
+- `input`
 - `status`
-- `source`
-- `error_code`
-- `latest_version`
-- `previous_version`
-- `unreleased_present`
-- `published_at`
-- `highlights`
-- `raw_url`
+- `selection`
+- `versions`
+- `signals`
+- `warnings`
 - `notes`
+- `error`
 
-When `--details` is enabled, these fields are added:
+When `--details` is enabled, detailed items appear in:
 
-- `latest_details`
-- `previous_details`
+- `versions.latest.details`
+- `versions.previous.details`
 
 Field semantics:
 
-- `published_at` is only populated when a matching GitHub Release confirms the version
-- If the result comes from `CHANGELOG` but the latest version is not confirmed by recent `Releases`, `published_at` stays `null` and `notes` explains that the changelog entry may be prewritten or pending release
-- If a readable `CHANGELOG` is clearly behind a newer published GitHub Release, the skill falls back to `Releases` instead of reporting the stale changelog version as latest; this stale check prefers comparable stable releases before prereleases
-- `Unreleased` is treated as a supplemental signal and does not, by itself, block fallback to fresher published Releases
+- `selection.decision_code` provides a stable machine-friendly explanation for the final choice
+- `selection.release_confirmed` indicates whether the selected latest version is confirmed by GitHub Releases
+- `versions.latest` / `versions.previous` group version, publish time, prerelease state, highlights, and details
+- `signals` carries supplemental reasoning signals such as `unreleased_present`, `changelog_stale`, and `stable_release_preferred`
+- `warnings[].code` provides stable structured warning labels
+- When recent Releases mix prereleases and stable releases, the skill prefers stable releases by default and only falls back to prereleases when no recent stable release is available
 
-## Common auth-related error codes
+## Common `error.code` values
 
 - `gh_auth_unavailable` — the current environment has no usable gh login state, common in cron or isolated runtimes
 - `gh_not_logged_in` — explicit local login is missing in an interactive environment

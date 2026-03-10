@@ -1,6 +1,6 @@
 # Output Schema
 
-This skill returns a stable JSON payload.
+This skill returns a stable JSON payload optimized for both script consumption and LLM parsing.
 
 ## Top-Level Fields
 
@@ -27,66 +27,110 @@ This skill returns a stable JSON payload.
 
 ## `results[]`
 
-Each result item includes:
+Each result item now has a nested structure:
 
-- `input_repo`
-- `repo`
+- `input`
 - `status`
-- `source`
-- `error_code`
-- `latest_version`
-- `previous_version`
-- `unreleased_present`
-- `published_at`
-- `highlights`
-- `raw_url`
+- `selection`
+- `versions`
+- `signals`
+- `warnings`
 - `notes`
+- `error`
 
-Field notes:
+### `input`
 
-- `published_at`: official publish time confirmed by a matching GitHub Release; otherwise `null`
-- `notes`: may include hints such as `发现 Unreleased 分段`, `已用 GitHub Release 确认该版本发布时间`, or `CHANGELOG 最新版本尚未在最近的 GitHub Releases 中确认，可能是预写或待发布`
-- even when a changelog file exists, `source` may still be `releases` if the changelog's latest formal version is clearly behind a newer published GitHub Release; stale comparison prefers comparable stable releases before prereleases
-- `unreleased_present` may remain `true` on a releases-sourced result when the repository changelog still contains an `Unreleased` section
+- `raw`: original repository input
+- `normalized`: normalized `owner/repo` when available, otherwise `null`
+- `repo_url`: canonical repository URL when normalization succeeds
 
-When `--details` is enabled, each item also includes:
-
-- `latest_details`
-- `previous_details`
-
-## Status Values
+### `status`
 
 - `ok`
 - `no_data`
 - `error`
 
-## Source Values
+### `selection`
 
-- `changelog`
-- `releases`
-- `none`
-- `error`
+- `source`: `changelog` / `releases` / `none` / `error`
+- `decision_code`: stable machine-friendly reason for the final selection
+- `selected_url`: selected changelog URL or release URL when `source` is `changelog` or `releases`; otherwise `null`
+- `release_confirmed`: whether the selected latest version has GitHub Release confirmation
 
-## Common `error_code` Values
+Common `decision_code` values include:
 
-- `invalid_repo`
-- `gh_not_installed`
-- `gh_auth_unavailable`
-- `gh_not_logged_in`
-- `gh_auth_invalid`
-- `repo_not_found_or_no_access`
-- `rate_limited`
-- `permission_denied`
-- `request_timeout`
-- `gh_api_failed`
-- `runtime_error`
+- `changelog_selected_release_confirmed`
+- `changelog_selected_release_unconfirmed`
+- `changelog_selected_without_releases`
+- `changelog_selected_release_probe_failed`
+- `changelog_selected_version_unparsed`
+- `releases_selected`
+- `releases_selected_stale_changelog`
+- `releases_selected_changelog_unavailable`
+- `no_changelog_or_releases`
+- `invalid_input`
+- `fetch_failed`
+- `unexpected_exception`
+
+### `versions`
+
+- `latest`
+- `previous`
+
+Each version object may include:
+
+- `version`
+- `published_at` (latest only)
+- `is_prerelease`
+- `highlights` (latest only)
+- `details` (only when `details_included = true`)
+
+### `signals`
+
+- `unreleased_present`: whether changelog still contains an `Unreleased` section
+- `changelog_stale`: whether changelog existed but was rejected in favor of newer releases
+- `stable_release_preferred`: whether prereleases were present but the final selection preferred the stable track
+
+### `warnings`
+
+Structured warning objects:
+
+- `code`
+- `message`
+
+Common warning codes include:
+
+- `unreleased_present`
+- `version_title_unparsed`
+- `release_confirmation_missing`
+- `no_releases_for_confirmation`
+- `release_probe_failed`
+- `stable_release_preferred`
+- `release_body_empty`
+- `release_body_sparse`
+- `changelog_fetch_failed`
+- `changelog_timeout`
+- `changelog_rate_limited`
+
+### `notes`
+
+- Human-readable supplemental notes
+- Useful for direct display or prompt context
+- Not intended to be the primary machine decision surface; prefer `selection.decision_code` and `warnings[].code`
+
+### `error`
+
+- `null` when `status != error`
+- otherwise includes:
+  - `code`
+  - `message`
 
 ## Minimal Success Example
 
 ```json
 {
-  "schema_version": "github-fetch-release-notes/v2",
-  "generated_at": "2026-03-06T17:42:48Z",
+  "schema_version": "github-fetch-release-notes/v3",
+  "generated_at": "2026-03-10T10:20:30Z",
   "query": {
     "input_repos": ["openclaw/openclaw"],
     "release_limit": 2,
@@ -102,21 +146,45 @@ When `--details` is enabled, each item also includes:
   },
   "results": [
     {
-      "input_repo": "openclaw/openclaw",
-      "repo": "openclaw/openclaw",
+      "input": {
+        "raw": "openclaw/openclaw",
+        "normalized": "openclaw/openclaw"
+      },
       "status": "ok",
-      "source": "changelog",
-      "error_code": null,
-      "latest_version": "2026.3.3",
-      "previous_version": "2026.3.2",
-      "unreleased_present": true,
-      "published_at": null,
-      "highlights": ["..."],
-      "raw_url": "https://github.com/openclaw/openclaw/blob/main/CHANGELOG.md",
+      "selection": {
+        "source": "changelog",
+        "decision_code": "changelog_selected_release_confirmed",
+        "selected_url": "https://github.com/openclaw/openclaw/blob/main/CHANGELOG.md",
+        "release_confirmed": true
+      },
+      "versions": {
+        "latest": {
+          "version": "2026.3.8",
+          "published_at": "2026-03-09T07:49:27Z",
+          "is_prerelease": null,
+          "highlights": ["..."]
+        },
+        "previous": {
+          "version": "2026.3.7",
+          "is_prerelease": null
+        }
+      },
+      "signals": {
+        "unreleased_present": true,
+        "changelog_stale": false,
+        "stable_release_preferred": false
+      },
+      "warnings": [
+        {
+          "code": "unreleased_present",
+          "message": "发现 Unreleased 分段"
+        }
+      ],
       "notes": [
         "发现 Unreleased 分段",
-        "CHANGELOG 最新版本尚未在最近的 GitHub Releases 中确认，可能是预写或待发布"
-      ]
+        "已用 GitHub Release 确认该版本发布时间"
+      ],
+      "error": null
     }
   ]
 }
@@ -128,20 +196,34 @@ When `--details` is enabled, each item also includes:
 {
   "results": [
     {
-      "input_repo": "badrepo",
-      "repo": null,
+      "input": {
+        "raw": "badrepo",
+        "normalized": null
+      },
       "status": "error",
-      "source": "error",
-      "error_code": "invalid_repo",
-      "latest_version": null,
-      "previous_version": null,
-      "unreleased_present": false,
-      "published_at": null,
-      "highlights": [],
-      "raw_url": null,
+      "selection": {
+        "source": "error",
+        "decision_code": "invalid_input",
+        "selected_url": null,
+        "release_confirmed": null
+      },
+      "versions": {
+        "latest": null,
+        "previous": null
+      },
+      "signals": {
+        "unreleased_present": false,
+        "changelog_stale": false,
+        "stable_release_preferred": false
+      },
+      "warnings": [],
       "notes": [
-        "Repository input is invalid."
-      ]
+        "仓库名不合法：格式应为 owner/repo，或完整 GitHub 仓库 URL"
+      ],
+      "error": {
+        "code": "invalid_repo",
+        "message": "仓库名不合法：格式应为 owner/repo，或完整 GitHub 仓库 URL"
+      }
     }
   ]
 }
