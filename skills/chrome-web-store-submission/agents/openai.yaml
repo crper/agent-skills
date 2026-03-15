@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chrome Web Store Submission"
+  short_description: "Write Chrome Web Store submission copy"
+  default_prompt: "Use $chrome-web-store-submission to draft accurate Chrome Web Store submission materials for this extension."

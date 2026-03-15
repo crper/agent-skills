@@ -1,18 +1,62 @@
-[
-  {
-    "name": "single-purpose-chinese",
-    "prompt": "用 $chrome-web-store-submission 帮我写 Chrome 扩展发布信息，只输出中文，包含单一用途、storage/contextMenus/sidePanel 权限理由、远程代码和数据使用。"
-  },
-  {
-    "name": "permission-rationale-english",
-    "prompt": "Use $chrome-web-store-submission to generate English-only Chrome Web Store permission justifications and remote code answers for this extension."
-  },
-  {
-    "name": "bilingual-listing-copy",
-    "prompt": "用 $chrome-web-store-submission 给我一版中英双语的 Chrome Web Store 短描述、详细介绍和 reviewer note。"
-  },
-  {
-    "name": "requested-permissions-only",
-    "prompt": "用 $chrome-web-store-submission 检查当前扩展，只给 manifest 里实际申请到的权限写理由；如果没请求 sidePanel，就不要补一个 sidePanel 字段。"
-  }
-]
+{
+  "skill_name": "chrome-web-store-submission",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "用 $chrome-web-store-submission 帮我写 Chrome 扩展发布信息，只输出中文，包含单一用途、storage/contextMenus/sidePanel 权限理由、远程代码和数据使用。",
+      "expected_output": "Chinese-only form answers with stable field order and only the requested permissions.",
+      "expectations": [
+        "Output is Chinese only.",
+        "Single Purpose appears before permission rationale blocks.",
+        "Permission blocks include storage, contextMenus, and sidePanel only when they are actually requested.",
+        "Remote Code and Data Use sections are present."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Use $chrome-web-store-submission to generate English-only Chrome Web Store permission justifications and remote code answers for this extension.",
+      "expected_output": "English-only copy with reviewer-friendly permission explanations.",
+      "expectations": [
+        "Output is English only.",
+        "Permission explanations are tied to concrete extension features.",
+        "Remote-code wording does not make unsupported claims."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "用 $chrome-web-store-submission 给我一版中英双语的 Chrome Web Store 短描述、详细介绍和 reviewer note。",
+      "expected_output": "Bilingual listing copy with Chinese first and English second.",
+      "expectations": [
+        "Chinese content appears before English content.",
+        "Short Description, Detailed Description, and Reviewer Note are all present."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "用 $chrome-web-store-submission 检查当前扩展，只给 manifest 里实际申请到的权限写理由；如果没请求 sidePanel，就不要补一个 sidePanel 字段。",
+      "expected_output": "Requested-permissions-only output with no invented sections.",
+      "expectations": [
+        "Only the permissions present in the extension config are documented.",
+        "No sidePanel block is emitted when sidePanel is not requested."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "如果当前扩展有 host_permissions 和 fetch 请求，就用 $chrome-web-store-submission 生成表单答案，但不要把它写成“数据只保存在本地”。",
+      "expected_output": "Conservative copy for network-capable extensions.",
+      "expectations": [
+        "Data Use does not claim data stays local only when network activity is present.",
+        "Host permissions are explained as access to specific sites or APIs."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "如果扩展代码里出现 eval 或远程脚本加载迹象，就用 $chrome-web-store-submission 给我一版审核回答，但不要声称没有 remote code。",
+      "expected_output": "Conservative remote-code wording when risky patterns are present.",
+      "expectations": [
+        "Remote Code section does not claim there is no remote code when eval-like or remote script patterns are found.",
+        "Output explicitly asks for manual confirmation when evidence is ambiguous."
+      ]
+    }
+  ]
+}

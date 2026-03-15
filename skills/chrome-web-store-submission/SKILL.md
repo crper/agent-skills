@@ -1,6 +1,6 @@
 ---
 name: chrome-web-store-submission
-description: Prepare copy-and-paste Chrome Web Store submission materials for browser extensions, including single-purpose statements, permission justifications, remote-code answers, privacy/data-use disclosures, reviewer notes, and store descriptions. Use this whenever the user mentions Chrome 发布、Chrome 商店、Chrome Web Store、上架文案、审核表单、单一用途、权限理由、远程代码、数据使用、隐私披露，or asks for listing copy they can directly paste into the Chrome dashboard.
+description: Use when the user needs copy-and-paste Chrome Web Store submission materials for a browser extension, including 单一用途说明、权限理由、远程代码回答、数据使用/隐私披露、Reviewer Note、短描述或详细介绍。Trigger on Chrome 发布、Chrome 商店、Chrome Web Store、上架文案、审核表单、单一用途、权限理由、远程代码、数据使用、隐私披露, or store listing requests.
 ---
 
 # Chrome Web Store Submission
@@ -23,14 +23,21 @@ This skill does **not** publish the extension or interact with Chrome Web Store 
 
 ## Workflow
 
-### 1. Inspect the extension before writing
+### 1. Extract extension facts before writing
 
-Read the current extension source of truth first:
+Run this first:
 
+```bash
+python3 ./skills/chrome-web-store-submission/scripts/inspect_extension_facts.py [project-root]
+```
+
+Use the JSON output as the primary source of truth. If the script returns `status = error` or leaves key fields ambiguous, then inspect these sources manually in this order:
+
+- `manifest.json` or build output manifest
 - `package.json`
 - `wxt.config.ts`
 - relevant entrypoints such as `src/entrypoints/background.ts`
-- manifest/build output only when helpful as confirmation
+- content scripts, popup pages, options pages, and HTML entrypoints when needed
 
 Verify at least:
 
@@ -41,18 +48,30 @@ Verify at least:
 - whether remote code is used
 - whether user data is collected, transmitted, sold, or shared
 
-### 2. Write from code, not from assumptions
+### 2. Treat assessment states as hard gates
+
+When `inspect_extension_facts.py` reports:
+
+- `assessments.remote_code.status = no`: you may say no remote code is used
+- `assessments.remote_code.status = possible`: do not claim “No remote code is used”; say the repo contains patterns that need manual confirmation
+- `assessments.data_transmission.status = no`: you may say data is not transmitted to external servers
+- `assessments.data_transmission.status = possible`: do not claim data stays local only
+- `assessments.data_sale_or_sharing.status = unknown`: do not claim data is not sold or shared unless the repo or user explicitly provides evidence
+
+### 3. Write from code, not from assumptions
 
 When drafting any Chrome Web Store field:
 
 - tie each permission to a concrete feature in the codebase
+- prefer `permission_evidence` from the inspector output over generic template text
 - do not justify permissions with “future use”
 - distinguish local browser storage from server-side collection
 - explicitly state when data stays local and is not transmitted
 - only write permission sections for permissions that are actually requested by the extension, unless the user explicitly asks for a full template
+- keep `host_permissions` separate from API permissions when they matter for the form
 - flag ambiguity instead of guessing
 
-### 3. Keep the output structure stable
+### 4. Keep the output structure stable
 
 Unless the user asks for a custom format, output in this order:
 
@@ -70,14 +89,14 @@ For permission rationale blocks:
 - keep their order stable when multiple are needed
 - do not invent `storage`, `contextMenus`, or `sidePanel` sections when the extension does not request them
 
-### 4. Honor the requested language
+### 5. Honor the requested language
 
 - If the user asks for **Chinese**, output only Chinese
 - If the user asks for **English**, output only English
 - If the user asks for **bilingual**, output Chinese first and English second
 - If the user does not specify, match the conversation language
 
-### 5. Use reviewer-friendly wording
+### 6. Use reviewer-friendly wording
 
 Prefer concrete wording like:
 
@@ -90,6 +109,15 @@ Avoid vague wording like:
 - “Improves user experience”
 - “Used for various features”
 - “May be needed in some scenarios”
+
+## Ambiguity handling
+
+If evidence is incomplete, write conservative copy:
+
+- say what the code clearly shows
+- say what still needs confirmation
+- avoid absolute privacy or compliance claims without repo evidence
+- prefer “The current repo inspection shows ...” over “The extension guarantees ...”
 
 ## Output modes
 
@@ -121,6 +149,7 @@ Before finalizing, verify:
 - the extension name matches current config
 - the version matches current config
 - permission explanations match the actual permission list
+- permission explanations match concrete code usage when evidence is available
 - remote-code answers match the actual code
 - data-use answers match storage/network behavior
 - no unsupported claims about privacy policy, encryption, or compliance are added without evidence
@@ -128,3 +157,4 @@ Before finalizing, verify:
 ## References
 
 - Read `references/field-templates.md` for reusable answer patterns and stable field order.
+- Read `references/permission-patterns.md` for permission-specific wording beyond the basic examples.
