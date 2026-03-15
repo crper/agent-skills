@@ -91,6 +91,8 @@ class RepoUpdateResult:
     release_confirmed: Optional[bool] = None
     latest_is_prerelease: Optional[bool] = None
     previous_is_prerelease: Optional[bool] = None
+    latest_summary_state: Optional[str] = None
+    previous_summary_state: Optional[str] = None
     changelog_stale: bool = False
     stable_release_preferred: bool = False
     warnings: List[ResultWarning] = field(default_factory=list)
@@ -110,6 +112,7 @@ class RepoUpdateResult:
                 'version': self.latest_version,
                 'published_at': self.published_at,
                 'is_prerelease': self.latest_is_prerelease,
+                'summary_state': self.latest_summary_state,
                 'highlights': list(self.highlights),
             }
             if include_details:
@@ -120,6 +123,7 @@ class RepoUpdateResult:
             previous_item = {
                 'version': self.previous_version,
                 'is_prerelease': self.previous_is_prerelease,
+                'summary_state': self.previous_summary_state,
             }
             if include_details:
                 previous_item['details'] = list(self.previous_details)

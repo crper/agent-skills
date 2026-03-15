@@ -10,6 +10,25 @@ BOLD_RE = re.compile(r"\*\*([^*]+)\*\*")
 EM_RE = re.compile(r"\*([^*]+)\*")
 GENERIC_RELEASE_TITLE_RE = re.compile(r"^(release|version)\s+v?\d", re.IGNORECASE)
 STATS_LINE_RE = re.compile(r"^stats\*?:", re.IGNORECASE)
+PACKAGE_VERSION_LINE_RE = re.compile(r"^(?:@?[\w./-]+)@v?\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9._-]+)?$", re.IGNORECASE)
+LOW_SIGNAL_PREFIX_RE = re.compile(r"^(?:chore|docs?)(?:\(|:|\b)", re.IGNORECASE)
+UPDATE_CHANGELOG_RE = re.compile(r"^update changelog\b", re.IGNORECASE)
+INSTALL_COMMAND_RE = re.compile(
+    r"^(?:curl\b|wget\b|npm\b|pnpm\b|yarn\b|bun\b|npx\b|brew\b|winget\b|powershell\b|pwsh\b|irm\b)",
+    re.IGNORECASE,
+)
+FULL_COMMIT_RE = re.compile(r"^view the full commit:", re.IGNORECASE)
+INSTALL_LABELS = {
+    "macos/linux:",
+    "linux:",
+    "macos:",
+    "windows:",
+    "bash",
+    "sh",
+    "powershell",
+    "pwsh",
+    "cmd",
+}
 GENERIC_HEADING_VALUES = {
     "what's changed",
     "whats changed",
@@ -108,5 +127,24 @@ def collect_items(lines: List[str], limit: Optional[int] = None) -> List[str]:
     return items
 
 
+def is_low_signal_highlight(item: str) -> bool:
+    lower = item.lower()
+    if PACKAGE_VERSION_LINE_RE.match(item):
+        return True
+    if LOW_SIGNAL_PREFIX_RE.match(item):
+        return True
+    if UPDATE_CHANGELOG_RE.match(item):
+        return True
+    if INSTALL_COMMAND_RE.match(item):
+        return True
+    if FULL_COMMIT_RE.match(item):
+        return True
+    if lower in INSTALL_LABELS:
+        return True
+    return False
+
+
 def summarize_lines(lines: List[str], limit: int = 3) -> List[str]:
-    return collect_items(lines, limit)
+    items = collect_items(lines)
+    highlights = [item for item in items if not is_low_signal_highlight(item)]
+    return highlights[:limit]

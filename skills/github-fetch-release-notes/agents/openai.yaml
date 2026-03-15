@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Release Notes"
+  short_description: "Fetch GitHub release and changelog updates"
+  default_prompt: "Use $github-fetch-release-notes to fetch recent GitHub repository updates as stable JSON."

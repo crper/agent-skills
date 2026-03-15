@@ -82,6 +82,7 @@ Each version object may include:
 - `version`
 - `published_at` (latest only)
 - `is_prerelease`
+- `summary_state` (`normal` / `sparse` / `empty`)
 - `highlights` (latest only)
 - `details` (only when `details_included = true`)
 

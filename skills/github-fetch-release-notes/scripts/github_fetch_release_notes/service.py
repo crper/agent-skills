@@ -24,6 +24,14 @@ from .release_policy import (
 
 
 class RepoUpdateService:
+    @staticmethod
+    def classify_summary_state(raw_text: str, highlights: List[str]) -> str:
+        if not raw_text.strip():
+            return 'empty'
+        if highlights:
+            return 'normal'
+        return 'sparse'
+
     def __init__(self, config: FetchConfig, client: Optional[GhApiClient] = None) -> None:
         self.config = config
         self.client = client or GhApiClient(config)
@@ -117,6 +125,10 @@ class RepoUpdateService:
 
     @staticmethod
     def build_changelog_result(candidate: ChangelogCandidate) -> RepoUpdateResult:
+        latest_summary_state = 'normal' if candidate.highlights or candidate.latest_details else 'sparse'
+        previous_summary_state = None
+        if candidate.previous_version or candidate.previous_details:
+            previous_summary_state = 'normal' if candidate.previous_details else 'sparse'
         return make_result(
             input_repo=candidate.input_repo,
             repo=candidate.repo,
@@ -132,6 +144,8 @@ class RepoUpdateService:
             previous_details=candidate.previous_details,
             decision_code=candidate.decision_code,
             release_confirmed=candidate.release_confirmed,
+            latest_summary_state=latest_summary_state,
+            previous_summary_state=previous_summary_state,
             warnings=candidate.warnings,
         )
 
@@ -157,14 +171,20 @@ class RepoUpdateService:
         previous_body = previous.get('body') or ''
         latest_details = collect_items(latest_body.splitlines(), detail_limit)
         previous_details = collect_items(previous_body.splitlines(), detail_limit)
+        latest_highlights = summarize_lines(latest_body.splitlines(), 3)
+        previous_highlights = summarize_lines(previous_body.splitlines(), 3)
+        latest_summary_state = RepoUpdateService.classify_summary_state(latest_body, latest_highlights)
+        previous_summary_state = None
+        if previous:
+            previous_summary_state = RepoUpdateService.classify_summary_state(previous_body, previous_highlights)
         note_list = list(notes or [])
         warning_list = list(warnings or [])
 
-        if not latest_body.strip():
+        if latest_summary_state == 'empty':
             message = '最新 Release 没有正文内容'
             note_list.append(message)
             warning_list.append(make_warning('release_body_empty', message))
-        elif not latest_details:
+        elif latest_summary_state == 'sparse':
             message = '最新 Release 的正文过于简略，未提取到可用摘要'
             note_list.append(message)
             warning_list.append(make_warning('release_body_sparse', message))
@@ -177,7 +197,7 @@ class RepoUpdateService:
             previous_version=latest_release_version(previous),
             unreleased_present=unreleased_present,
             published_at=latest.get('published_at'),
-            highlights=summarize_lines(latest_body.splitlines(), 3),
+            highlights=latest_highlights,
             raw_url=latest.get('html_url') or github_repo_url(repo),
             notes=note_list,
             latest_details=latest_details,
@@ -186,6 +206,8 @@ class RepoUpdateService:
             release_confirmed=True,
             latest_is_prerelease=is_prerelease(latest),
             previous_is_prerelease=is_prerelease(previous),
+            latest_summary_state=latest_summary_state,
+            previous_summary_state=previous_summary_state,
             changelog_stale=changelog_stale,
             stable_release_preferred=stable_release_preferred,
             warnings=warning_list,

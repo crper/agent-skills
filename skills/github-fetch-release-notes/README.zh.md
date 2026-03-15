@@ -73,7 +73,7 @@ python3 ./skills/github-fetch-release-notes/scripts/fetch_updates.py owner/repo 
 
 - `selection.decision_code` 提供稳定的机器可读决策原因
 - `selection.release_confirmed` 表示最终选中的最新版本是否已被 GitHub Release 确认
-- `versions.latest` / `versions.previous` 统一承载版本、发布时间、是否预发布、亮点和详情
+- `versions.latest` / `versions.previous` 统一承载版本、发布时间、是否预发布、摘要质量（`summary_state`）、亮点和详情
 - `signals` 存放补充判断信号，例如 `unreleased_present`、`changelog_stale`、`stable_release_preferred`
 - `warnings[].code` 提供稳定的结构化告警标签
 - 如果最近 Releases 同时混有预发布和正式版，默认优先正式版；只有最近没有正式版时，才返回预发布

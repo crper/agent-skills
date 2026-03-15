@@ -1,7 +1,6 @@
 ---
 name: github-fetch-release-notes
-description: 📦 获取 GitHub 仓库更新摘要。优先读取 CHANGELOG，读取不到时回退到 Releases。只要用户提到 GitHub 仓库更新、Release Notes、CHANGELOG、版本对比、日报周报、订阅多个项目动态、直接贴 GitHub 仓库 URL，或者想把 GitHub 更新接进 cron / 自动化，都应该使用这个技能。默认输出稳定的结构化 JSON，适合脚本和大模型消费，并优先复用本机 `gh auth login` 的登录态。这个技能面向小批量查询，建议一次最多 10 个仓库。
-compatibility: Python 3.8+；需要安装 GitHub CLI（gh）并先执行一次 gh auth login；需要能访问 github.com。
+description: Use when the user asks for GitHub 仓库更新、Release Notes、CHANGELOG 摘要、版本对比、更新日报周报，或要把 GitHub 更新接进脚本、自动化、定时任务，并且希望拿到稳定结构化 JSON。Do not use for general repository reading, code review, issue triage, or architecture analysis just because a GitHub URL is present.
 ---
 
 # 📦 GitHub Fetch Release Notes
@@ -14,6 +13,12 @@ compatibility: Python 3.8+；需要安装 GitHub CLI（gh）并先执行一次 g
 - 比较最新版本和上一版的差异
 - 给多个仓库做更新订阅、日报或周报
 - 把 GitHub 更新接进 cron、workflow、bot 或其他自动化流程
+
+## 不要用于
+
+- 只是贴了 GitHub 仓库 URL，但用户并没有明确表达“看更新 / 版本 / Release / CHANGELOG / 订阅”的意图
+- 代码审查、Issue 排查、仓库结构阅读、架构分析
+- 需要抓 README、源码、PR、Issue 内容本身，而不是版本更新摘要
 
 ## 定位
 
@@ -38,6 +43,8 @@ compatibility: Python 3.8+；需要安装 GitHub CLI（gh）并先执行一次 g
 ```bash
 gh auth login
 ```
+
+需要安装 GitHub CLI（`gh`），并且当前环境能访问 `github.com`。
 
 ## 调用方式
 
@@ -96,6 +103,7 @@ python3 ./skills/github-fetch-release-notes/scripts/fetch_updates.py owner/repo 
 
 ## 交互原则
 
+- 只有在“更新意图”明确时才触发；单独出现 GitHub URL 不构成触发条件
 - 默认先拿结构化 JSON，再由上层决定翻译、总结和排版
 - 用户明确要自动化接入、脚本消费，或者要把结果喂给别的模型时，直接使用默认 JSON
 - 用户要更多上下文时，再加 `--details`

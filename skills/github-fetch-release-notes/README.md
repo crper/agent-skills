@@ -73,7 +73,7 @@ Field semantics:
 
 - `selection.decision_code` provides a stable machine-friendly explanation for the final choice
 - `selection.release_confirmed` indicates whether the selected latest version is confirmed by GitHub Releases
-- `versions.latest` / `versions.previous` group version, publish time, prerelease state, highlights, and details
+- `versions.latest` / `versions.previous` group version, publish time, prerelease state, summary quality (`summary_state`), highlights, and details
 - `signals` carries supplemental reasoning signals such as `unreleased_present`, `changelog_stale`, and `stable_release_preferred`
 - `warnings[].code` provides stable structured warning labels
 - When recent Releases mix prereleases and stable releases, the skill prefers stable releases by default and only falls back to prereleases when no recent stable release is available

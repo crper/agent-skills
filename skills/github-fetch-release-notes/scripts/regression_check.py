@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
+from github_fetch_release_notes.service import RepoUpdateService
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 ENTRYPOINT = SCRIPT_DIR / 'fetch_updates.py'
@@ -165,6 +166,94 @@ def case_oversized_batch_rejected() -> None:
     expect('建议一次最多 10 个仓库' in text, f'预期错误消息提示拆分执行，实际={preview(text)!r}')
 
 
+def case_release_summary_state_empty() -> None:
+    result = RepoUpdateService.build_release_result(
+        input_repo='owner/repo',
+        repo='owner/repo',
+        releases=[
+            {
+                'tag_name': 'v1.0.0',
+                'published_at': '2026-03-15T00:00:00Z',
+                'body': '',
+                'html_url': 'https://github.com/owner/repo/releases/tag/v1.0.0',
+                'prerelease': False,
+            }
+        ],
+        detail_limit=8,
+        decision_code='releases_selected',
+    )
+    expect(result is not None, '预期构建 release result 成功')
+    latest = (result.to_dict(include_details=True).get('versions') or {}).get('latest') or {}
+    warnings = (result.to_dict(include_details=True).get('warnings') or [])
+    expect(latest.get('summary_state') == 'empty', f'预期 summary_state=empty，实际={latest}')
+    expect(any(item.get('code') == 'release_body_empty' for item in warnings), f'预期包含 release_body_empty 告警，实际={warnings}')
+
+
+def case_release_summary_state_sparse_and_ignores_install_boilerplate() -> None:
+    result = RepoUpdateService.build_release_result(
+        input_repo='voidzero-dev/vite-plus',
+        repo='voidzero-dev/vite-plus',
+        releases=[
+            {
+                'tag_name': 'v0.1.11',
+                'published_at': '2026-03-15T00:00:00Z',
+                'body': '\n'.join(
+                    [
+                        '@voidzero-dev/vite-plus-core@0.1.11',
+                        '@voidzero-dev/vite-plus-test@0.1.11',
+                        'vite-plus@0.1.11',
+                        'macOS/Linux:',
+                        'bash',
+                        'curl -fsSL https://vite.plus | bash',
+                        'Windows:',
+                        'powershell',
+                        'View the full commit: https://github.com/voidzero-dev/vite-plus/commit/ef77182006de701eb5260a68652f6dab6db7b760',
+                    ]
+                ),
+                'html_url': 'https://github.com/voidzero-dev/vite-plus/releases/tag/v0.1.11',
+                'prerelease': False,
+            }
+        ],
+        detail_limit=8,
+        decision_code='releases_selected',
+    )
+    expect(result is not None, '预期构建 release result 成功')
+    payload = result.to_dict(include_details=True)
+    latest = (payload.get('versions') or {}).get('latest') or {}
+    warnings = payload.get('warnings') or []
+    expect(latest.get('summary_state') == 'sparse', f'预期 summary_state=sparse，实际={latest}')
+    expect((latest.get('highlights') or []) == [], f'预期安装/版本样板不进入 highlights，实际={latest}')
+    expect(any(item.get('code') == 'release_body_sparse' for item in warnings), f'预期包含 release_body_sparse 告警，实际={warnings}')
+
+
+def case_release_highlights_filter_low_signal_lines() -> None:
+    result = RepoUpdateService.build_release_result(
+        input_repo='superset-sh/superset',
+        repo='superset-sh/superset',
+        releases=[
+            {
+                'tag_name': 'desktop-v1.1.7',
+                'published_at': '2026-03-15T00:00:00Z',
+                'body': '\n'.join(
+                    [
+                        'chore(desktop): bump version to 1.1.6 by @user in https://github.com/org/repo/pull/1',
+                        'Update changelog workspace screenshot by @user in https://github.com/org/repo/pull/2',
+                        'SUPER-362: scaffold V2 workspace sidebar foundation by @user in https://github.com/org/repo/pull/3',
+                    ]
+                ),
+                'html_url': 'https://github.com/superset-sh/superset/releases/tag/desktop-v1.1.7',
+                'prerelease': False,
+            }
+        ],
+        detail_limit=8,
+        decision_code='releases_selected',
+    )
+    expect(result is not None, '预期构建 release result 成功')
+    latest = (result.to_dict(include_details=True).get('versions') or {}).get('latest') or {}
+    highlights = latest.get('highlights') or []
+    expect(highlights == ['SUPER-362: scaffold V2 workspace sidebar foundation by @user in https://github.com/org/repo/pull/3'], f'预期只保留高信号 highlights，实际={highlights}')
+
+
 CASES = [
     Case('public-release', '公开仓库 release 路径成功', case_public_release_success),
     Case('public-changelog', '公开仓库 changelog 路径成功', case_public_changelog_success),
@@ -174,6 +263,9 @@ CASES = [
     Case('invalid-token', '无效 token 返回 gh_auth_invalid', case_invalid_gh_token),
     Case('graphql-partial-fallback', 'GraphQL 部分成功时其余仓库仍能回退并返回结构化错误', case_graphql_partial_fallback),
     Case('oversized-batch', '超过 10 个仓库时提前拒绝执行', case_oversized_batch_rejected),
+    Case('release-summary-empty', '空 release 正文返回 empty 状态', case_release_summary_state_empty),
+    Case('release-summary-sparse', '安装样板和包版本行不会主导 highlights', case_release_summary_state_sparse_and_ignores_install_boilerplate),
+    Case('release-highlight-filter', '低信号 chore/docs 行不会进入 highlights', case_release_highlights_filter_low_signal_lines),
 ]
 CASE_BY_NAME = {case.name: case for case in CASES}
 
