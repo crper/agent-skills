@@ -13,6 +13,7 @@ Install a specific skill from this repository:
 ```bash
 npx skills add https://github.com/crper/agent-skills --skill github-fetch-release-notes
 npx skills add https://github.com/crper/agent-skills --skill chrome-web-store-submission
+npx skills add https://github.com/crper/agent-skills --skill review-state-architecture
 ```
 
 List installable skills:
@@ -27,6 +28,7 @@ npx skills add https://github.com/crper/agent-skills --list
 | --- | --- | --- | --- |
 | Repository Intelligence | [`github-fetch-release-notes`](./skills/github-fetch-release-notes/README.md) | Fetches GitHub Release / CHANGELOG updates through local `gh` auth and returns stable JSON. | <img src="./demos/github-fetch-release-notes/github-fetch-release-notes.png" alt="github-fetch-release-notes preview" width="220"> |
 | Store & Publishing | [`chrome-web-store-submission`](./skills/chrome-web-store-submission/README.md) | Prepares copy-and-paste Chrome Web Store submission copy, including permissions, privacy answers, and reviewer notes. | <img src="./demos/chrome-web-store-submission/chrome-web-store-submission.png" alt="chrome-web-store-submission preview" width="220"> |
+| Architecture Review | [`review-state-architecture`](./skills/review-state-architecture/README.md) | Reviews application-state ownership, source-of-truth boundaries, and mutation paths, then returns evidence-backed refactoring guidance with ASCII + Mermaid diagrams. | ASCII + Mermaid |
 
 ## Contributing
 

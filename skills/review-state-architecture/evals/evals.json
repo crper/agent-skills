@@ -1,0 +1,65 @@
+{
+  "skill_name": "review-state-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "用 $review-state-architecture 看一下这个 React 项目的购物车和结算状态边界，重点回答 source of truth、写入点和读取点是不是乱了。",
+      "expected_output": "Chinese state-architecture review with evidence-backed findings and diagrams.",
+      "expectations": [
+        "Output is in Chinese.",
+        "Major findings use the shape 结论 / 证据 / 影响 / 处理.",
+        "The report includes a state-subject table.",
+        "The report includes an ASCII pre-map and 3 Mermaid diagrams with different roles."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Use $review-state-architecture for a quick pass on this app's Zustand store and URL search params. I only need the top issues.",
+      "expected_output": "Quick-pass English review that stays narrow and focused on the top state issues.",
+      "expectations": [
+        "Output is in English.",
+        "The review stays focused on a small set of prioritized subjects rather than mapping the whole app.",
+        "Recommendations focus on ownership and state boundaries, not generic style review."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "用 $review-state-architecture 看这个项目的筛选条件、分页和表单 dirty 状态应该分别归哪里；如果证据不够，不要装懂。",
+      "expected_output": "Chinese review that explicitly separates evidence from inference and uncertainty.",
+      "expectations": [
+        "The report uses 证据, 推断, or 待确认 rather than overclaiming.",
+        "The recommendations can classify state into URL state, form state, or another appropriate owner.",
+        "The answer does not hide missing information."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "用 $review-state-architecture 审一下这个前端，看看是不是把 React Query 的服务端数据又镜像进了本地 store。",
+      "expected_output": "Review that can detect mirrored server state and recommend a smaller ownership model.",
+      "expectations": [
+        "The answer checks whether server-owned data is duplicated in client-owned state.",
+        "The recommendation can use actions like 迁移到服务端缓存 or 改为派生 when appropriate.",
+        "The answer does not default to introducing a new library."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "If this repo has only one tangled reducer chain in one module, use $review-state-architecture and decide whether to stay single-threaded or parallelize the review.",
+      "expected_output": "Review behavior that applies the Subagent Gate conservatively.",
+      "expectations": [
+        "The skill prefers single-threaded review when the problem lives in one tightly coupled module.",
+        "The answer does not force parallelism when coordination cost is higher than the likely insight."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "用 $review-state-architecture 评估这个项目的状态设计，但不要写成泛泛的状态管理哲学文章，我要的是能迁移的目标模型。",
+      "expected_output": "Actionable review with migration waves instead of generic philosophy.",
+      "expectations": [
+        "The answer proposes a concrete target ownership model.",
+        "The migration order is wave-based and small in scope.",
+        "The answer stays concrete and repo-grounded rather than turning into generic theory."
+      ]
+    }
+  ]
+}

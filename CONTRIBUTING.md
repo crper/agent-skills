@@ -12,6 +12,8 @@ skills/
     ├── SKILL.md
     ├── README.md
     ├── README.zh.md
+    ├── agents/
+    │   └── openai.yaml
     ├── evals/
     │   └── evals.json
     ├── references/
@@ -26,8 +28,11 @@ Every skill should include:
 - `SKILL.md` — required
 - `README.md` — recommended
 - `README.zh.md` — recommended when Chinese users are expected
+- `agents/openai.yaml` — optional, but useful for preset integration in agent UIs
 - `evals/evals.json` — recommended for regression coverage
 - `references/` — optional, but useful for output schema or operational notes
+
+If `SKILL.md` links to local files under `references/`, `scripts/`, or `agents/`, those files must exist in the repository and stay in sync with the skill text.
 
 ## SKILL.md Guidelines
 
@@ -39,6 +44,8 @@ Your `SKILL.md` should clearly answer these questions:
 4. What are the limits or assumptions?
 
 Keep the description specific enough that an agent knows when to activate the skill.
+
+Prefer keeping `SKILL.md` focused on discovery, trigger rules, and core workflow. Move heavier examples, report schemas, or diagram rules into `references/` when that improves long-term maintainability.
 
 ## Coding Guidelines
 

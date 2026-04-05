@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review State Architecture"
+  short_description: "Review app-state ownership, flow, and source-of-truth boundaries"
+  default_prompt: "Use $review-state-architecture to review this codebase's application-state ownership, read/write paths, and source-of-truth boundaries, then propose a simpler target model with 3 Mermaid diagrams."
