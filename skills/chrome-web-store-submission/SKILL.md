@@ -1,6 +1,6 @@
 ---
 name: chrome-web-store-submission
-description: Use when the user needs copy-and-paste Chrome Web Store submission materials for a browser extension, including 单一用途说明、权限理由、远程代码回答、数据使用/隐私披露、Reviewer Note、短描述或详细介绍。Trigger on Chrome 发布、Chrome 商店、Chrome Web Store、上架文案、审核表单、单一用途、权限理由、远程代码、数据使用、隐私披露, or store listing requests.
+description: Use when the user needs Chrome Web Store submission copy for a browser extension, such as 单一用途说明、权限理由、远程代码回答、数据使用/隐私披露、Reviewer Note、短描述或详细介绍. Trigger on Chrome 发布、Chrome 商店、上架文案、审核表单、单一用途、权限理由、远程代码、数据使用、隐私披露, or store listing requests.
 ---
 
 # Chrome Web Store Submission

@@ -22,6 +22,8 @@
 - `scripts/github_fetch_release_notes/gh_client.py`：环境校验、`gh api` 调用与并发退避
 - `scripts/github_fetch_release_notes/changelog.py`：CHANGELOG 解析
 - `scripts/github_fetch_release_notes/output.py`：稳定输出与错误语义
+- `references/output-schema.md`：字段级 schema 说明
+- `agents/openai.yaml`：Agent UI 预设提示
 - `evals/evals.json`：后续回归检查可复用的最小评测提示集
 
 ## 依赖

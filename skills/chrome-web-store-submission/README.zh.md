@@ -12,8 +12,11 @@
 
 ## 目录结构
 
+- `scripts/inspect_extension_facts.py`：扩展事实检查脚本
 - `SKILL.md`：技能说明和工作流
 - `references/field-templates.md`：字段模板与稳定输出顺序
+- `references/permission-patterns.md`：权限字段措辞模式
+- `agents/openai.yaml`：Agent UI 预设提示
 - `evals/evals.json`：后续回归检查可复用的最小评测提示集
 
 ## 适合处理的任务

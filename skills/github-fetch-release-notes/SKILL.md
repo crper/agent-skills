@@ -1,6 +1,6 @@
 ---
 name: github-fetch-release-notes
-description: Use when the user asks for GitHub 仓库更新、Release Notes、CHANGELOG 摘要、版本对比、更新日报周报，或要把 GitHub 更新接进脚本、自动化、定时任务，并且希望拿到稳定结构化 JSON。Do not use for general repository reading, code review, issue triage, or architecture analysis just because a GitHub URL is present.
+description: Use when the user asks for GitHub 仓库更新、Release Notes、CHANGELOG 摘要、版本对比、更新日报、更新周报、更新订阅，或要把 GitHub 更新接进脚本、自动化、定时任务，并希望拿到稳定结构化 JSON. Do not use for general repository reading, code review, issue triage, or architecture analysis just because a GitHub URL is present.
 ---
 
 # 📦 GitHub Fetch Release Notes

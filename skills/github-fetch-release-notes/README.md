@@ -22,6 +22,8 @@ Fetch GitHub Release / CHANGELOG updates through the local `gh auth login` sessi
 - `scripts/github_fetch_release_notes/gh_client.py` — environment checks, `gh api` execution, and concurrency backoff
 - `scripts/github_fetch_release_notes/changelog.py` — CHANGELOG parsing
 - `scripts/github_fetch_release_notes/output.py` — stable output schema and error semantics
+- `references/output-schema.md` — strict field-level schema reference
+- `agents/openai.yaml` — prompt preset for agent UIs
 - `evals/evals.json` — minimal evaluation prompts for future regression checks
 
 ## Requirements

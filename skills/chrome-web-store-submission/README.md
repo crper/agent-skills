@@ -12,8 +12,11 @@ Prepare copy-and-paste Chrome Web Store submission content for browser extension
 
 ## Project Structure
 
+- `scripts/inspect_extension_facts.py` — deterministic extension fact inspection
 - `SKILL.md` — skill instructions and workflow
 - `references/field-templates.md` — reusable field wording and stable output order
+- `references/permission-patterns.md` — permission-specific wording patterns
+- `agents/openai.yaml` — prompt preset for agent UIs
 - `evals/evals.json` — minimal prompts for future regression checks
 
 ## Best Use Cases
