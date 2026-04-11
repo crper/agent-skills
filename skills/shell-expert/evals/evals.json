@@ -1,0 +1,95 @@
+{
+  "skill_name": "shell-expert",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use $shell-expert to write a POSIX sh script that loops over all .log files under the current directory and prints their paths safely, including filenames with spaces.",
+      "expected_output": "A POSIX sh-safe solution that does not rely on Bash arrays or word-splitting loops.",
+      "expectations": [
+        "The answer explicitly targets POSIX sh.",
+        "The solution avoids arrays and [[ ... ]].",
+        "The command or script handles spaces safely."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "用 $shell-expert 帮我看看这个 /bin/sh 脚本为什么报 unexpected operator，并给我一个兼容写法：if [[ \"$x\" == foo* ]]; then echo ok; fi",
+      "expected_output": "A root-cause explanation plus a POSIX-compatible replacement.",
+      "expectations": [
+        "The answer explains that [[ ... ]] is not POSIX sh syntax.",
+        "The replacement uses a portable pattern such as case or [ ].",
+        "The reply keeps the focus on shell mismatch rather than generic style advice."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Use $shell-expert to replace this brittle command with something safer for arbitrary filenames: for f in $(find . -type f -name '*.json'); do jq . \"$f\" >/dev/null; done",
+      "expected_output": "A safer loop or pipeline that preserves arbitrary filenames.",
+      "expectations": [
+        "The answer identifies the word-splitting risk in $(find ...).",
+        "The replacement preserves filenames with spaces.",
+        "The result mentions required tooling such as jq if used."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "用 $shell-expert 给我一个更安全的批量删除命令：删掉当前目录下所有 .tmp 文件，先给 dry-run，再给正式执行版。",
+      "expected_output": "Preview-first destructive command guidance.",
+      "expectations": [
+        "The answer includes a dry-run form before the destructive form.",
+        "The command scope is explicit.",
+        "The response flags that the operation is destructive."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Use $shell-expert to review this macOS/Linux shell snippet and fix any portability issues: sed -i 's/foo/bar/g' config.txt",
+      "expected_output": "A split solution or an explicit note about GNU/BSD sed differences.",
+      "expectations": [
+        "The answer mentions GNU/BSD sed -i differences.",
+        "The fix is explicit about platform assumptions or provides both variants.",
+        "The response does not pretend one form is universally portable."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "用 $shell-expert 写一个 Bash 脚本片段，要求遇到管道中任一步失败就退出，并说明为什么这里只适合 Bash 而不是 POSIX sh。",
+      "expected_output": "A Bash-targeted answer that uses Bash-specific error handling intentionally.",
+      "expectations": [
+        "The answer explicitly targets Bash.",
+        "The snippet uses Bash-compatible pipe failure handling.",
+        "The response explains why the chosen feature is not a POSIX sh default."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Use $shell-expert to fix this Dockerfile shell snippet so it works under the default Docker RUN shell instead of assuming Bash: RUN source /etc/profile && [[ -n \"$FOO\" ]] && echo ok",
+      "expected_output": "A Docker RUN-safe answer that treats the default shell as /bin/sh unless changed.",
+      "expectations": [
+        "The answer explains that Docker RUN usually uses /bin/sh -c by default.",
+        "The replacement avoids Bash-only source and [[ ... ]] syntax unless the answer explicitly switches the shell.",
+        "The response states the shell assumption."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "用 $shell-expert 修一下这个 Makefile recipe，要求 cd 之后的目录对下一行也生效：target:\\n\\tcd scripts\\n\\tnpm test",
+      "expected_output": "A Make-aware answer that preserves shell state correctly across recipe steps.",
+      "expectations": [
+        "The answer explains that Make runs recipe lines in separate shells by default.",
+        "The fix combines commands or uses an explicit Make mechanism such as GNU make's .ONESHELL.",
+        "The response does not pretend the original two-line recipe shares shell state."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Use $shell-expert to generate a lossless file list for arbitrary filenames, including names that may contain embedded newlines, and explain whether a plain newline-delimited preview is reversible.",
+      "expected_output": "A NUL-delimited answer or an explicit statement that line-oriented output is only human-readable.",
+      "expectations": [
+        "The answer does not call a newline-delimited list safe for arbitrary filenames.",
+        "The machine-safe form uses NUL delimiting or explicitly explains the limitation.",
+        "The response distinguishes human-readable output from round-trippable output."
+      ]
+    }
+  ]
+}

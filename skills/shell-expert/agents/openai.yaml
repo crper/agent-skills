@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shell Expert"
+  short_description: "Design safer, portable shell commands and scripts"
+  default_prompt: "Use $shell-expert to write or review a shell command or script with the right portability level, safe quoting, and debuggable execution."
