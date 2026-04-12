@@ -15,6 +15,7 @@ npx skills add https://github.com/crper/agent-skills --skill github-fetch-releas
 npx skills add https://github.com/crper/agent-skills --skill chrome-web-store-submission
 npx skills add https://github.com/crper/agent-skills --skill shell-expert
 npx skills add https://github.com/crper/agent-skills --skill review-state-architecture
+npx skills add https://github.com/crper/agent-skills --skill simplify-code
 ```
 
 List installable skills:
@@ -31,6 +32,7 @@ npx skills add https://github.com/crper/agent-skills --list
 | Store & Publishing | [`chrome-web-store-submission`](./skills/chrome-web-store-submission/README.md) | Prepares copy-and-paste Chrome Web Store submission copy, including permissions, privacy answers, and reviewer notes. | <img src="./demos/chrome-web-store-submission/chrome-web-store-submission.png" alt="chrome-web-store-submission preview" width="220"> |
 | Shell & CLI | [`shell-expert`](./skills/shell-expert/README.md) | Writes, reviews, ports, and debugs shell commands with explicit POSIX/Bash/Zsh assumptions, safer quoting, and portability-aware command design. | POSIX + Bash |
 | Architecture Review | [`review-state-architecture`](./skills/review-state-architecture/README.md) | Reviews application-state ownership, source-of-truth boundaries, and mutation paths, then returns evidence-backed refactoring guidance with ASCII + Mermaid diagrams. | ASCII + Mermaid |
+| Code Quality | [`simplify-code`](./skills/simplify-code/README.md) | Simplifies changed code with strict scope, diff-budget, verification, and stop-hook rules so low-risk cleanup can be auto-applied without drifting into silent refactors. | Auto-fix + review-only |
 
 ## Contributing
 

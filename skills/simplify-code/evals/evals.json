@@ -1,0 +1,145 @@
+{
+  "skill_name": "simplify-code",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use $simplify-code to clean up the files I just changed. Preserve behavior, do the low-risk fixes directly, and keep the scope limited to the current git diff.",
+      "expected_output": "A strict auto-fix pass scoped to the current diff, with a concise summary and targeted validation.",
+      "expectations": [
+        "The answer defaults to auto-fix instead of review-only.",
+        "The response keeps the scope narrow to the current diff or touched files.",
+        "The result preserves behavior and mentions validation."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "用 $simplify-code 帮我看这组改动，但这次只要报告，不要直接改代码。",
+      "expected_output": "A review-only report with findings and recommendations, not direct edits.",
+      "expectations": [
+        "The answer respects the user's report-only override.",
+        "The response distinguishes findings from recommendations.",
+        "The reply does not assume auto-fix once the user asked for no edits."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Use $simplify-code on this controller and its callers. If simplifying it would require changing the exported function signature, stop and tell me instead of forcing it.",
+      "expected_output": "Conservative behavior that defers API-shaping changes.",
+      "expectations": [
+        "The answer preserves exported signatures by default.",
+        "The response treats public API changes as a stop-and-report boundary.",
+        "The recommendation stays focused on safer local cleanups."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "用 $simplify-code 清理这个鉴权中间件，能改的就改，但不要越过权限和租户边界。",
+      "expected_output": "A conservative pass that avoids blind edits in sensitive auth logic.",
+      "expectations": [
+        "The answer treats auth and tenancy logic as sensitive.",
+        "The response avoids aggressive refactors in permission-critical code.",
+        "Any deferred items are clearly called out."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Use $simplify-code to simplify this module, but first check whether the repo already has a helper for path normalization so we do not keep a duplicate local version.",
+      "expected_output": "A cleanup pass that searches adjacent helpers before inventing new logic.",
+      "expectations": [
+        "The answer checks for existing utilities before adding a helper.",
+        "The response prefers reuse over new abstraction.",
+        "The result stays within the requested module surface."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "用 $simplify-code 帮我瘦身 `src/parser.ts`，不要顺手改其他目录，除非那些文件是直接调用方并且必须读取才能确认行为边界。",
+      "expected_output": "A tightly scoped cleanup pass with minimal context expansion.",
+      "expectations": [
+        "The answer keeps the review surface narrow.",
+        "The response reads direct callers only when behavior boundaries require it.",
+        "The result avoids unrelated repo cleanup."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Use $simplify-code to clean up this async worker. Preserve retries, locking, and resource lifetime semantics even if some code looks repetitive.",
+      "expected_output": "A report or cautious pass that does not alter concurrency semantics blindly.",
+      "expectations": [
+        "The answer treats retries, locking, and lifetimes as high-risk boundaries.",
+        "The response avoids changing concurrency behavior without strong evidence.",
+        "The result favors deferring risky ideas over clever rewrites."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "用 $simplify-code 做一个实现后的清理 pass，只跑最小必要验证，不要默认整仓全量检查；如果验证覆盖不够，要明确说出来。",
+      "expected_output": "A conservative cleanup pass with targeted validation and explicit residual risk.",
+      "expectations": [
+        "The answer prefers focused validation over unrelated full-repo checks.",
+        "The response states clearly when validation coverage is partial.",
+        "The report includes residual risk when checks are limited."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Use $simplify-code on this branch, but do not touch generated files, lockfiles, or minified bundles unless I explicitly list them.",
+      "expected_output": "Scope resolution that excludes low-signal generated artifacts by default.",
+      "expectations": [
+        "The answer excludes generated or low-signal files unless explicitly requested.",
+        "The response keeps the cleanup focused on meaningful source files.",
+        "The skill does not silently broaden scope into build outputs."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "用 $simplify-code 处理这个 diff，但如果你发现为了简化需要把多个调用点抽成共享 helper，先停下来给我提案，不要直接改。",
+      "expected_output": "A stop-hook response for structural refactors.",
+      "expectations": [
+        "The answer distinguishes local cleanup from structural refactoring.",
+        "The response requires approval before introducing a shared helper across call sites.",
+        "Any direct edits stay limited to low-risk cleanup."
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Use $simplify-code on this parser, but preserve the current error messages and logging because downstream tooling depends on them.",
+      "expected_output": "A cleanup pass that treats error semantics and logging as protected behavior.",
+      "expectations": [
+        "The answer preserves externally relied-on error messages and logs.",
+        "The response treats logging and error behavior as part of the behavior boundary.",
+        "Deferred items are reported instead of changing those contracts silently."
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "用 $simplify-code 清理这段老代码。当前没有测试，而且相关 typecheck 也已经是红的。如果不能安全自动修，就只给我报告，并说明是否应该先写 characterization tests。",
+      "expected_output": "A conservative fallback to review-only with guidance to establish a safety net first.",
+      "expectations": [
+        "The answer does not force broad auto-fixes on top of a failing baseline.",
+        "The response can switch to review-only when verification is too weak.",
+        "The report mentions characterization tests when they are the safest next step."
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "Use $simplify-code to clean this codebase up. There is no git repo here and I did not point you to any files yet.",
+      "expected_output": "A request for concrete scope instead of a repo-wide wander.",
+      "expectations": [
+        "The answer does not guess across the whole repository.",
+        "The response asks for a concrete file, snippet, directory, or diff scope.",
+        "The skill treats missing scope as a blocker outside git context."
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "用 $simplify-code 处理这次改动，但当前 diff 横跨十几个源码文件，而且没有可靠测试。优先给我一个严格的 review-only 报告，不要直接大面积自动修。",
+      "expected_output": "A broad-scope fallback to review-only because the validation surface is too weak.",
+      "expectations": [
+        "The answer treats very broad scope as a reason to avoid sweeping auto-fixes.",
+        "The response switches to review-only when safe validation is unlikely.",
+        "The report stays focused on prioritized findings instead of editing broadly."
+      ]
+    }
+  ]
+}

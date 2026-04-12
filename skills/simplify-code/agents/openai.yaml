@@ -1,0 +1,4 @@
+interface:
+  display_name: "Simplify Code"
+  short_description: "Simplify changed code with strict scope, budget, and safety"
+  default_prompt: "Use $simplify-code to clean up the changed code while preserving behavior, keeping the diff small, honoring project conventions, and stopping before structural refactors unless I ask for them."
